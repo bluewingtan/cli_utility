@@ -4,7 +4,7 @@ FILE: cli_utility.py
 PROJECT: Utility
 CREATED DATE: 2019-10-23
 AUTHOR: BlueWingTan
-LAST MODIFIED: 2019-10-24
+LAST MODIFIED: 2019-10-25
 MODIFIED BY: the developer formerly known as BlueWingTan
 
 Copyright (c) 2019 STG
@@ -40,7 +40,8 @@ class output_manager(object):
         kwargs - other parameter print support, like sep etc.
         """
         if condition:
-            self._print_symbol(
+            condition = None
+            return self._print_symbol(
                 *values, symbol='[+] ', symbol_color=colorama.Fore.GREEN, fore_color=fore_color, **kwargs)
 
     def print_error(self, *values: object, condition: bool = True, fore_color: int = colorama.Fore.RESET, **kwargs):
@@ -53,8 +54,8 @@ class output_manager(object):
         kwargs - other parameter print support, like sep etc.
         """
         if condition:
-            self._print_symbol(
-                *values, symbol='[-] ', symbol_color=colorama.Fore.RED, condition=True, fore_color=fore_color, **kwargs)
+            return self._print_symbol(
+                *values, symbol='[-] ', symbol_color=colorama.Fore.RED, fore_color=fore_color, **kwargs)
 
     def print_warn(self, *values: object, condition: bool = True, fore_color: int = colorama.Fore.RESET, **kwargs):
         """
@@ -66,7 +67,7 @@ class output_manager(object):
         kwargs - other parameter print support, like sep etc.
         """
         if condition:
-            self._print_symbol(
+            return self._print_symbol(
                 *values, symbol='[!] ', symbol_color=colorama.Fore.YELLOW, fore_color=fore_color, **kwargs)
 
     def print_info(self, *values: object, condition: bool = True, fore_color: int = colorama.Fore.RESET,  **kwargs):
@@ -79,10 +80,10 @@ class output_manager(object):
         kwargs - other parameter print support, like sep etc.
         """
         if condition:
-            self._print_symbol(
+            return self._print_symbol(
                 *values, symbol='[*] ', symbol_color=colorama.Fore.BLUE, fore_color=fore_color, **kwargs)
 
-    def print(self, *values: object, fore_color: int = colorama.Fore.RESET, condition: bool = True, **kwargs):
+    def print(self, *values: object, condition: bool = True, fore_color: int = colorama.Fore.RESET, **kwargs):
         """
         Print wrapper with foreground color  
 
@@ -128,17 +129,21 @@ class output_manager(object):
 
 class cli_menu(object):
     """
-    The menu that support single and multiple selection  
+    The menu that support single and multiple selection   
+
+    Parameters:  
+    multiple - whether the menu are multiple selection or not
     """
 
     def __init__(self, multiple: bool = True):
         """
-        Define constant of keyboard  
+        Define constant of keyboard   
         """
         self.key_ctrl_c = '\x03'
         self.key_direction_prefix = '\x1b'
         self.key_direction_up = '\x1b[A'
         self.key_direction_down = '\x1b[B'
+        self.key_space = '\x20'
         self.key_enter = '\r'
         self.selector_selected_multiple = '[*] '
         self.selector_selected_multiple_placeholder = '[ ] '
@@ -146,6 +151,7 @@ class cli_menu(object):
         self.selector_selected_single_placeholder = '    '
         self.selector_newline = '\n'
         self.multiple = multiple
+        self.selection_finish_position = -1
         colorama.init()
 
     def _rendering_menu(self, choices: list, selected: list, position: int):
@@ -158,7 +164,7 @@ class cli_menu(object):
         selected - default choices list index in choices list  
         position - now pointer position
         """
-        if position not in range(len(choices)):
+        if position not in range(len(choices)) and position != self.selection_finish_position:
             raise IndexError
 
         if not self.multiple:
@@ -235,14 +241,14 @@ class cli_menu(object):
         sys.stdout.write('\033[{}A\033[K'.format(item_number))
         sys.stdout.flush()
 
-    def show(self, title: str, choices: list, selected: list):
+    def show(self, title: str, choices: list, selected: list = []):
         """
         Show menu
 
         Parameters:  
         title - title of the menu  
         choices - choices list  
-        selected - default choices list index in choices list  
+        selected - [optional] default choices list index in choices list  
 
         NOTE:  
         In multiple selection mode, `Ctrl+C` is determination of select,
@@ -251,6 +257,9 @@ class cli_menu(object):
         `Enter` is determination of select.
         """
         position = 0
+
+        if not selected:
+            selected = []
 
         sys.stdout.write(title + '\n')
         sys.stdout.flush()
@@ -267,18 +276,21 @@ class cli_menu(object):
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
             if key == self.key_ctrl_c:
+                break
+            elif key == self.key_enter:
                 if self.multiple:
+                    self._clear_menu_item(len(choices))
+                    self._rendering_menu(
+                        choices, selected, self.selection_finish_position)
                     return selected
                 else:
-                    break
-            elif key == self.key_enter:
+                    return position
+            elif key == self.key_space:
                 if self.multiple:
                     if position in selected:
                         selected.remove(position)
                     else:
                         selected.append(position)
-                else:
-                    return position
             elif key == self.key_direction_up:
                 position -= 1
             elif key == self.key_direction_down:
