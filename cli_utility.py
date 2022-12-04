@@ -5,7 +5,7 @@ PROJECT: Utility
 CREATED DATE: 2019-10-23
 AUTHOR: BlueWingTan
 LAST MODIFIED: 2019-10-25
-MODIFIED BY: the developer formerly known as BlueWingTan
+MODIFIED BY: the developer formerly known as BlueWingTan & Logicguy1
 
 Copyright (c) 2019 STG
 
@@ -241,7 +241,7 @@ class cli_menu(object):
         sys.stdout.write('\033[{}A\033[K'.format(item_number))
         sys.stdout.flush()
 
-    def show(self, title: str, choices: list, selected: list = []):
+    def show(self, title: str, choices: list, selected: list = [], position: int = 0):
         """
         Show menu
 
@@ -249,6 +249,7 @@ class cli_menu(object):
         title - title of the menu  
         choices - choices list  
         selected - [optional] default choices list index in choices list  
+        position - [optional] default selection for single mode
 
         NOTE:  
         In multiple selection mode, `Ctrl+C` is determination of select,
@@ -256,7 +257,6 @@ class cli_menu(object):
         In single selection mode, `Ctrl+C` is the signal of abort,
         `Enter` is determination of select.
         """
-        position = 0
 
         if not selected:
             selected = []
