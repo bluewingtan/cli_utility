@@ -79,6 +79,7 @@ logger = cli_utility.output_manager()
 choices = ['Haruhi Suzumiya', 'Yuki Nagato', 'Mikuru Asahina']
 title = 'Who do you love?'
   
+# You can also set a position argument to set a default selection
 selected = menu.show(title, choices)
 logger.print('Girls you selected:',
              fore_color=cli_utility.colorama.Fore.LIGHTCYAN_EX)
